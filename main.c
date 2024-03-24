@@ -5,20 +5,11 @@
 
 #define stack_len 8
 
-int stack[stack_len];
+int stack[stack_len] = {0};
 int sp = -1;
-
-void init_stack(int* stack, int len)
-{
-    for(int i = 0; i < len; i++)
-    {
-        stack[i] = 0;
-    }
-}
 
 void prints(int* stack, int len)
 {
-    //printf("%d [", sp);
     printf("[");
     int i;
     for(i = 0; i < len - 1; i++)
@@ -28,7 +19,8 @@ void prints(int* stack, int len)
     printf("%d] -> %d\n", stack[i], stack[sp]);
 }
 
-void push(int val)
+// Push
+void give(int val)
 {
     if(sp == stack_len - 1)
     {
@@ -37,7 +29,8 @@ void push(int val)
     else stack[++sp] = val;
 }
 
-int pop()
+// Pop
+int take()
 {
     if(sp == -1) printf("Underflow...\n");
     else
@@ -52,72 +45,74 @@ int top()
     return stack[sp];
 }
 
-void add()
+// Add
+void heal()
 {
-    int a = pop();
-    int b = pop();
-    push(b + a);
+    int a = take();
+    int b = take();
+    give(b + a);
 }
 
-void sub()
+// Sub
+void hit()
 {
-    int a = pop();
-    int b = pop();
-    push(b - a);
+    int a = take();
+    int b = take();
+    give(b - a);
 }
 
-void mul()
+// Mul
+void buff()
 {
-    int a = pop();
-    int b = pop();
-    push(b * a);
+    int a = take();
+    int b = take();
+    give(b * a);
 }
 
-void divi()
+// Div
+void debuff()
 {
-    int a = pop();
-    int b = pop();
-    push(b / a);
-    push(b % a);
+    int a = take();
+    int b = take();
+    give(b / a);
+    give(b % a);
 }
 
-void halt()
+// Halt
+void wait_halt()
 {
-    getchar();
+    while(getchar() != '\n');
 }
 
-void duplicate()
+// Duplicate
+void copy()
 {
-    int a = pop();
-    push(a);
-    push(a);
+    int a = take();
+    give(a);
+    give(a);
 }
 
 void ask()
 {
 	int n;
 	scanf("%d", &n);
-	push(n);
+	give(n);
 }
 
-void wait(){halt();}
-void give(int n){push(n);}
+void say(char* str)
+{
+    printf("%s\n", str);
+}
 
-void say(char* str){printf("%s\n", str);}
-void take(){pop();}
-void show(){prints(stack, stack_len);};
-
-void copy(){duplicate();}
-
-void hit(){sub();}
-void heal(){add();}
-
-void buff(){mul();}
-void debuff(){divi();}
+void show()
+{
+    prints(stack, stack_len);
+}
 
 struct Token {
     char lexeme[128];
     int position;
+    int line;
 };
 
 int samestr(char *a, char *b)
@@ -145,7 +140,7 @@ int execute(struct Token list[1024], int lexemes)
         char *next = list[i + 1].lexeme;
         
         if(samestr(curr, "ASK")) ask();
-        else if(samestr(curr, "WAIT")) wait();
+        else if(samestr(curr, "WAIT")) wait_halt();
         else if(samestr(curr, "GIVE"))
         {
             if(isdigit(next[0]))
@@ -174,88 +169,84 @@ int execute(struct Token list[1024], int lexemes)
         else if(samestr(curr, "DEBUFF")) debuff();
         else
         {
-            printf("Instruccion %d invalida.\n", i);
+            printf("Invalid instruction on line %d.\n", list[i].line);
             return 1;
         }
     }
     return 0;
 }
 
-
-int main()
+int check_extension(const char *fspec)
 {
-    init_stack(stack, stack_len);
-        
-    char test[] = "SAY \"Metele un numero\"\nGIVE 2\nASK\nSHOW\nBUFF\nSHOW\nSAY \"Te lo duplique!\"\nTOP";
-    struct Token token_list[1024];
-    int lexemes = 0;
-    char *c = &test[0];
+    char *ext = strrchr(fspec, '.');
+    if(samestr(ext, ".siz")) return 1;
+    else return 0;
+}
 
-    int is_str = 0;
-    while(*c != '\0')
+int main(int argc, char* argv [])
+{
+    FILE *fptr = fopen(argv[1], "r");
+
+    if(fptr == NULL)
     {
-        if(*c == '\n' || (*c == ' ' && is_str == 0))
-        {
-           	lexemes++;
-		}
-        else
-        {
-            if(samestr(token_list[lexemes].lexeme, ""))
-            {
-                token_list[lexemes].position = lexemes;
-            }
-            if(*c == '\"') is_str = !is_str;
-            
-            strncat(token_list[lexemes].lexeme, c, 1);
-        }
-        c++;
+        printf("Could not open file.\n");
+        return 1;
     }
-    
-    lexemes++;
-    /*
-    printf("[");
-    int i;
-    for(i = 0; i < lexemes; i++)
+
+    if(!check_extension(argv[1]))
     {
-        printf("%s", token_list[i].lexeme);
-		//printf(" - %d ", token_list[i].position);
-        if(i < lexemes - 1) printf(", ");
+        printf("Not a Sizzle file.\n");
+        return 1;
+    }
+
+    struct Token token_list[1024];
+    char buffer[256];
+    int lexemes = 0;
+    int line = 1;
+    int is_str = 0;
+
+    while(fgets(buffer, 256, fptr) != NULL)
+    {
+        // For each line
+        int i = 0;
+        while(buffer[i] != '\0')
+        {
+            char c = buffer[i];
+            if(buffer[i + 1] == '\n' || (c == ' ' && is_str == 0))
+            {
+                lexemes++;
+            }
+            else
+            {
+                if(samestr(token_list[lexemes].lexeme, ""))
+                {
+                    token_list[lexemes].position = lexemes;
+                    token_list[lexemes].line = line;
+                }
+                if(c == '\"') is_str = !is_str;
+                if(c != '\n') strncat(token_list[lexemes].lexeme, &c, 1);
+                //printf("LEXs: %d - %s\n", lexemes, token_list[lexemes].lexeme);
+            }
+            i++;
+        }
+        line++;
+    }
+
+    /*
+    printf("LEXEMES: %d\n", lexemes);
+    printf("[");
+    for(int j = 0; j < lexemes; j++)
+    {
+        printf("%d - ", token_list[j].line);
+        printf("%s", token_list[j].lexeme);
+        //printf(" - %d ", token_list[j].position);
+        if(j < lexemes - 1) printf(", ");
     }
     printf("]\n");
     */
 
     execute(token_list, lexemes);
-
-    /*
-    while(1)
-    {
-        printf("What to do?\n");
-        printf("1. PUSH - 2. POP\n3. prints - 4. TOP\n5. EXIT\n");
-        scanf("%d", &choice);
-
-        switch(choice)
-        {
-            case 1:
-                printf("Number? ");
-                scanf("%d", &num);
-                push(num);
-                break;
-            case 2:
-                pop(num);
-                break;
-            case 3:
-                prints(stack, stack_len);
-                break;
-            case 4:
-                top();
-                break;
-            case 5:
-                return 0;
-            default:
-                printf("Not a valid choice\n");
-        }
-    }
-    */
-
+    
+    fclose(fptr); 
     return 0;
 }
