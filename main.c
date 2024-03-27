@@ -121,12 +121,25 @@ int samestr(char *a, char *b)
 	else return 0;
 }
 
+int starts_with(char *str, char chr)
+{
+    if(str[0] == chr) return 1;
+    else return 0;
+}
+
+int ends_with(char *str, char chr)
+{
+    int len = strlen(str) - 1;
+    if(str[len] == chr) return 1;
+    else return 0;
+}
+
 char* str_clean(char *str)
 {
     int len = strlen(str) - 1;
-    if(str[0] == '"' && str[len] == '"')
+    if(starts_with(str, '"'))
     {
-        str[len] = '\0';
+        if(ends_with(str, '"')) str[len] = '\0';
         return str + 1;
     }
     return str;
@@ -134,6 +147,8 @@ char* str_clean(char *str)
 
 int execute(struct Token list[1024], int lexemes)
 {
+    int total_lines = list[lexemes - 1].line;
+
     for(int i = 0; i < lexemes; i++)
     {
         char *curr = list[i].lexeme;
@@ -151,7 +166,7 @@ int execute(struct Token list[1024], int lexemes)
         }
         else if(samestr(curr, "SAY"))
         {
-            if(next[0] == '"')
+            if(starts_with(next, '"'))
             {
                 say(str_clean(next));
                 i++;
@@ -167,6 +182,17 @@ int execute(struct Token list[1024], int lexemes)
 
         else if(samestr(curr, "BUFF")) buff();
         else if(samestr(curr, "DEBUFF")) debuff();
+        else if(samestr(curr, "MOVE"))
+        {
+            if(isdigit(next[0]))
+            {
+                int line_num = atoi(next);
+                if(line_num > 0 && line_num <= total_lines && line_num != i)
+                {
+                    i = line_num - 2;
+                }
+            }
+        }
         else
         {
             printf("Invalid instruction on line %d.\n", list[i].line);
@@ -200,7 +226,7 @@ int main(int argc, char* argv [])
     }
 
     struct Token token_list[1024];
-    char buffer[256];
+    char buffer[256] = {0};
     int lexemes = 0;
     int line = 1;
     int is_str = 0;
@@ -212,7 +238,12 @@ int main(int argc, char* argv [])
         while(buffer[i] != '\0')
         {
             char c = buffer[i];
-            if(buffer[i + 1] == '\n' || (c == ' ' && is_str == 0))
+            if(buffer[i] == '\r' || buffer[i] == '\n')
+            {
+                lexemes++;
+                break;
+            }
+            else if(c == ' ' && is_str == 0)
             {
                 lexemes++;
             }
@@ -224,26 +255,25 @@ int main(int argc, char* argv [])
                     token_list[lexemes].line = line;
                 }
                 if(c == '\"') is_str = !is_str;
-                if(c != '\n') strncat(token_list[lexemes].lexeme, &c, 1);
-                //printf("LEXs: %d - %s\n", lexemes, token_list[lexemes].lexeme);
+                strncat(token_list[lexemes].lexeme, &c, 1);
             }
             i++;
         }
         line++;
     }
 
-    /*
+    
     printf("LEXEMES: %d\n", lexemes);
     printf("[");
     for(int j = 0; j < lexemes; j++)
     {
         printf("%d - ", token_list[j].line);
         printf("%s", token_list[j].lexeme);
-        //printf(" - %d ", token_list[j].position);
+        printf(" - %d ", token_list[j].position);
         if(j < lexemes - 1) printf(", ");
     }
     printf("]\n");
-    */
+    
 
     execute(token_list, lexemes);
     
