@@ -1,0 +1,5 @@
+SAY "Give me a number"
+ASK
+COPY
+BUFF
+TOP

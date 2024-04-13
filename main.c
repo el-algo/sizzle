@@ -191,7 +191,7 @@ int execute(struct Token list[1024], int lexemes)
         }
         else if(samestr(curr, "TAKE")) take();
         else if(samestr(curr, "SHOW")) show();
-        else if(samestr(curr, "TOP")) top();
+        else if(samestr(curr, "TOP")) print_top();
         else if(samestr(curr, "COPY")) copy();
 
         else if(samestr(curr, "HIT")) hit();

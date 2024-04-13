@@ -1,0 +1,6 @@
+SAY "Give me the first number"
+ASK
+SAY "Give me the second number"
+ASK
+HEAL
+TOP

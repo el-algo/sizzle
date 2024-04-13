@@ -1,0 +1,4 @@
+SAY "Input only 0"
+ASK
+MOVENZ 1
+SAY "Thank you!"
