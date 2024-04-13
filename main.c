@@ -41,8 +41,12 @@ int take()
 
 int top()
 {
-    printf("TOP -> %d\n", stack[sp]);
     return stack[sp];
+}
+
+void print_top()
+{
+    printf("TOP -> %d\n", top());
 }
 
 // Add
@@ -145,6 +149,19 @@ char* str_clean(char *str)
     return str;
 }
 
+void move(int *i, char *next, int total_lines)
+{
+    if(isdigit(next[0]))
+    {
+        int line_num = atoi(next);
+        if(line_num > 0 && line_num <= total_lines && line_num != *i)
+        {
+            *i = line_num - 2;
+        }
+    }
+}
+
+
 int execute(struct Token list[1024], int lexemes)
 {
     int total_lines = list[lexemes - 1].line;
@@ -184,14 +201,17 @@ int execute(struct Token list[1024], int lexemes)
         else if(samestr(curr, "DEBUFF")) debuff();
         else if(samestr(curr, "MOVE"))
         {
-            if(isdigit(next[0]))
-            {
-                int line_num = atoi(next);
-                if(line_num > 0 && line_num <= total_lines && line_num != i)
-                {
-                    i = line_num - 2;
-                }
-            }
+            move(&i, next, total_lines);
+        }
+        else if(samestr(curr, "MOVEZ"))
+        {
+            if(top() == 0) move(&i, next, total_lines);
+            else i++;
+        }
+        else if(samestr(curr, "MOVENZ"))
+        {
+            if(top() != 0) move(&i, next, total_lines);
+            else i++;
         }
         else
         {
@@ -262,7 +282,7 @@ int main(int argc, char* argv [])
         line++;
     }
 
-    
+    /*
     printf("LEXEMES: %d\n", lexemes);
     printf("[");
     for(int j = 0; j < lexemes; j++)
@@ -273,7 +293,7 @@ int main(int argc, char* argv [])
         if(j < lexemes - 1) printf(", ");
     }
     printf("]\n");
-    
+    */
 
     execute(token_list, lexemes);
     
